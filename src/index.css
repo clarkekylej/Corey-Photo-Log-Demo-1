@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.report-page {
+  width: 7.5in;
+  margin: 0 auto 16px;
+  background: white;
+  box-sizing: border-box;
+}
+
+.photo-entry {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.report-photo-box {
+  width: 100%;
+  height: 2.85in;
+  border: 1px solid black;
+  background: white;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.report-photo-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+}
+
+@page {
+  size: Letter;
+  margin: 0.5in;
+}
+
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: white !important;
+    height: auto !important;
+    overflow: visible !important;
+    width: 100%;
+  }
+
+  /* Hide the main React app completely */
+  #root {
+    display: none !important;
+  }
+
+  /* Hide all editor UI */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Show only the print portal content */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Reset all transforms used for screen preview zoom */
+  .preview-zoom-container,
+  .report-page,
+  .report-page * {
+    transform: none !important;
+    transform-origin: initial !important;
+  }
+
+  /* Report page styling for print */
+  .report-page {
+    width: 7.5in !important;
+    min-width: 7.5in !important;
+    max-width: 7.5in !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: white !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Photo entry - prevent splitting across pages */
+  .photo-entry {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Ensure images are contained */
+  .report-photo-box {
+    height: 2.85in !important;
+    overflow: hidden !important;
+  }
+
+  .report-photo-image {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    object-fit: cover !important;
+    display: block !important;
+  }
+
+  /* Print content container */
+  #print-content {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Ensure tables and borders print correctly */
+  table, td, th {
+    border-collapse: collapse !important;
+  }
+}
+
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+}
+
+.image-controls-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5);
+}

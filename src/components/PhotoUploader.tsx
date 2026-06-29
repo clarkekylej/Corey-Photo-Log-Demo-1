@@ -62,22 +62,22 @@ export function PhotoUploader({ onUpload }: Props) {
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
-      className={`border-2 border-dashed rounded-lg p-6 cursor-pointer text-center transition-colors ${
+      className={`cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
         isDragging
           ? 'border-blue-500 bg-blue-50'
-          : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+          : 'border-slate-300 bg-slate-50/60 hover:border-slate-400 hover:bg-white'
       }`}
     >
       <div className="flex flex-col items-center gap-2">
         {isDragging ? (
           <ImagePlus size={32} className="text-blue-500" />
         ) : (
-          <Upload size={32} className="text-gray-400" />
+          <Upload size={32} className="text-slate-400" />
         )}
-        <span className="font-medium text-gray-700">
+        <span className="font-medium text-slate-800">
           {isDragging ? 'Drop photos here' : 'Drag & drop photos or click to upload'}
         </span>
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-slate-500">
           Upload multiple photos at once
         </span>
       </div>

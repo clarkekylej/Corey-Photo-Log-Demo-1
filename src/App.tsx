@@ -2,9 +2,9 @@ import { useState, useEffect, useRef, memo, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ProjectData, PhotoEntry } from './types';
 import {
-  saveToStorage,
-  loadFromStorage,
-  clearStorage,
+  saveDraft,
+  loadDraft,
+  clearDraft,
   exportProjectJSON,
   importProjectJSON,
   hasMeaningfulProjectData,
@@ -28,6 +28,8 @@ import {
   X,
 } from 'lucide-react';
 
+type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'failed' | 'idle';
+
 const PrintPortal = memo(function PrintPortal({ data }: { data: ProjectData }) {
   const printContainer = document.getElementById('print-content');
   if (!printContainer) return null;
@@ -35,27 +37,82 @@ const PrintPortal = memo(function PrintPortal({ data }: { data: ProjectData }) {
 });
 
 function App() {
-  const [data, setData] = useState<ProjectData>(() => loadFromStorage() ?? getDefaultProjectData());
+  const [data, setData] = useState<ProjectData>(getDefaultProjectData());
+  const [isHydrated, setIsHydrated] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
-  const [previewScale, setPreviewScale] = useState(40);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [previewScale, setPreviewScale] = useState(() => {
+    const saved = Number(localStorage.getItem('field_photo_log_preview_scale'));
+    return Number.isFinite(saved) && saved >= 25 && saved <= 120 ? saved : 40;
+  });
   const [showBulkEdit, setShowBulkEdit] = useState(false);
   const [bulkDate, setBulkDate] = useState('');
   const [bulkDirection, setBulkDirection] = useState('');
   const [bulkDescription, setBulkDescription] = useState('');
   const importInputRef = useRef<HTMLInputElement>(null);
+  const selectedIds = useMemo(() => new Set(data.selectedPhotoIds), [data.selectedPhotoIds]);
 
   useEffect(() => {
-    if (!hasMeaningfulProjectData(data)) return;
+    let isMounted = true;
+
+    loadDraft()
+      .then((draft) => {
+        if (!isMounted) return;
+        if (draft) {
+          setData(draft);
+          setSaveStatus('saved');
+        }
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setSaveStatus('failed');
+        setSaveError('Saved draft could not be loaded. You can continue from a new draft.');
+      })
+      .finally(() => {
+        if (isMounted) setIsHydrated(true);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    if (!hasMeaningfulProjectData(data)) {
+      setSaveStatus('idle');
+      return;
+    }
 
     // Autosave only after a meaningful edit so an empty startup state cannot
-    // overwrite a complete draft with photos stored as data URLs.
+    // overwrite a complete draft while the IndexedDB image payloads hydrate.
+    setSaveStatus('unsaved');
+    setSaveError(null);
+    let isCurrent = true;
     const timeout = setTimeout(() => {
-      saveToStorage(data);
+      setSaveStatus('saving');
+      saveDraft(data).then((result) => {
+        if (!isCurrent) return;
+        if (result.ok) {
+          setSaveStatus('saved');
+          setSaveError(null);
+        } else {
+          setSaveStatus('failed');
+          setSaveError(result.error ?? 'Draft could not be saved.');
+        }
+      });
     }, 500);
-    return () => clearTimeout(timeout);
-  }, [data]);
+    return () => {
+      isCurrent = false;
+      clearTimeout(timeout);
+    };
+  }, [data, isHydrated]);
+
+  useEffect(() => {
+    localStorage.setItem('field_photo_log_preview_scale', String(previewScale));
+  }, [previewScale]);
 
   useEffect(() => {
     if (savedMessage) {
@@ -119,12 +176,8 @@ function App() {
     setData((prev) => ({
       ...prev,
       photoEntries: prev.photoEntries.filter((e) => e.id !== id),
+      selectedPhotoIds: prev.selectedPhotoIds.filter((selectedId) => selectedId !== id),
     }));
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
   };
 
   const handleDuplicate = (id: string) => {
@@ -160,23 +213,26 @@ function App() {
   };
 
   const handleToggleSelect = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
+    setData((prev) => {
+      const next = new Set(prev.selectedPhotoIds);
       if (next.has(id)) {
         next.delete(id);
       } else {
         next.add(id);
       }
-      return next;
+      return { ...prev, selectedPhotoIds: Array.from(next) };
     });
   };
 
   const handleSelectAll = () => {
-    setSelectedIds(new Set(data.photoEntries.map((e) => e.id)));
+    setData((prev) => ({
+      ...prev,
+      selectedPhotoIds: prev.photoEntries.map((e) => e.id),
+    }));
   };
 
   const handleDeselectAll = () => {
-    setSelectedIds(new Set());
+    setData((prev) => ({ ...prev, selectedPhotoIds: [] }));
   };
 
   const handleBulkApply = () => {
@@ -218,16 +274,25 @@ function App() {
     }));
   };
 
-  const handleSaveDraft = () => {
-    saveToStorage(data);
-    setSavedMessage('Draft saved!');
+  const handleSaveDraft = async () => {
+    setSaveStatus('saving');
+    const result = await saveDraft(data);
+    if (result.ok) {
+      setSaveStatus('saved');
+      setSaveError(null);
+      setSavedMessage('Draft saved!');
+    } else {
+      setSaveStatus('failed');
+      setSaveError(result.error ?? 'Draft could not be saved.');
+    }
   };
 
-  const handleClearDraft = () => {
+  const handleClearDraft = async () => {
     if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
-      clearStorage();
+      await clearDraft();
       setData(getDefaultProjectData());
-      setSelectedIds(new Set());
+      setSaveStatus('idle');
+      setSaveError(null);
       setSavedMessage('Draft cleared');
     }
   };
@@ -247,6 +312,7 @@ function App() {
     try {
       const imported = await importProjectJSON(file);
       setData(imported);
+      setSaveStatus('unsaved');
       setSavedMessage('Project imported!');
     } catch {
       alert('Failed to import project. Please check the file format.');
@@ -258,8 +324,8 @@ function App() {
     }
   };
 
-  const handlePrint = () => {
-    saveToStorage(data);
+  const handlePrint = async () => {
+    await handleSaveDraft();
     window.print();
   };
 
@@ -280,37 +346,55 @@ function App() {
     return Math.max(1, Math.ceil(data.photoEntries.length / 2));
   }, [data.photoEntries.length]);
 
+  const saveStatusLabel: Record<SaveStatus, string> = {
+    idle: 'No draft yet',
+    unsaved: 'Unsaved changes',
+    saving: 'Saving...',
+    saved: 'Saved',
+    failed: 'Save failed',
+  };
+  const saveStatusClass: Record<SaveStatus, string> = {
+    idle: 'bg-slate-100 text-slate-500 border-slate-200',
+    unsaved: 'bg-amber-50 text-amber-700 border-amber-200',
+    saving: 'bg-blue-50 text-blue-700 border-blue-200',
+    saved: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    failed: 'bg-red-50 text-red-700 border-red-200',
+  };
+  const buttonBase =
+    'inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+  const buttonSecondary =
+    `${buttonBase} border border-slate-300 bg-white text-slate-700 hover:bg-slate-50`;
+
   return (
     <>
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-slate-100 text-slate-900">
         {/* Top Header Bar */}
-        <div className="no-print bg-white border-b border-gray-200 sticky top-0 z-10">
-          <div className="max-w-screen-2xl mx-auto px-4 py-3">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <h1 className="text-lg font-bold text-gray-900">
-                Field Photo Log Generator
-              </h1>
-              <div className="flex items-center gap-2 flex-wrap">
+        <div className="no-print sticky top-0 z-10 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+          <div className="mx-auto max-w-screen-2xl px-5 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h1 className="text-lg font-semibold tracking-tight text-slate-950">
+                  Field Photo Log Generator
+                </h1>
+                <p className="text-xs text-slate-500">Draft, preview, and print professional field photo logs.</p>
+              </div>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <span className={`rounded-full border px-3 py-1 text-xs font-medium ${saveStatusClass[saveStatus]}`}>
+                  {saveStatusLabel[saveStatus]}
+                </span>
                 {savedMessage && (
-                  <span className="text-sm text-green-600 px-2">{savedMessage}</span>
+                  <span className="text-sm text-emerald-700 px-2">{savedMessage}</span>
                 )}
                 <button
                   onClick={handleSaveDraft}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                  className={`${buttonBase} bg-blue-600 text-white shadow-sm hover:bg-blue-700`}
                 >
                   <Save size={16} />
-                  Save
-                </button>
-                <button
-                  onClick={handleClearDraft}
-                  className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50 text-sm"
-                >
-                  <Trash2 size={16} />
-                  Clear
+                  Save Draft
                 </button>
                 <button
                   onClick={handleExport}
-                  className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50 text-sm"
+                  className={buttonSecondary}
                 >
                   <FileDown size={16} />
                   JSON
@@ -318,7 +402,7 @@ function App() {
                 <button
                   onClick={handleImportClick}
                   disabled={importing}
-                  className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50 text-sm disabled:opacity-50"
+                  className={buttonSecondary}
                 >
                   <FileUp size={16} />
                   Import
@@ -330,64 +414,71 @@ function App() {
                   onChange={handleImport}
                   className="hidden"
                 />
-                <div className="flex flex-col items-end">
-                  <button
-                    onClick={handlePrint}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-gray-900 text-white rounded hover:bg-gray-800 text-sm"
-                  >
-                    <Printer size={16} />
-                    Print / Save as PDF
-                  </button>
-                  <span className="text-xs text-gray-500 mt-1">
-                    Turn off headers/footers for cleanest output
-                  </span>
-                </div>
+                <button
+                  onClick={handleClearDraft}
+                  className={`${buttonSecondary} text-red-700 hover:bg-red-50`}
+                >
+                  <Trash2 size={16} />
+                  Clear
+                </button>
+                <button
+                  onClick={handlePrint}
+                  className={`${buttonBase} bg-slate-950 text-white shadow-sm hover:bg-slate-800`}
+                >
+                  <Printer size={16} />
+                  Print / Save as PDF
+                </button>
               </div>
             </div>
+            {saveError && (
+              <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {saveError}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Main Content: Editor + Preview */}
-        <div className="max-w-screen-2xl mx-auto px-4 py-6 flex flex-col lg:flex-row gap-6">
+        <div className="mx-auto flex max-w-screen-2xl flex-col gap-6 px-5 py-6 lg:flex-row">
           {/* Left: Editor Panel */}
           <div className="no-print w-full lg:w-[520px] flex-shrink-0 space-y-6">
-            <div className="bg-white rounded-lg shadow-sm p-4">
+            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
               <ProjectSetupForm
                 projectInfo={data.projectInfo}
                 onChange={handleProjectInfoChange}
               />
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-4">
-              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2 mb-4">
+            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="mb-4 border-b border-slate-200 pb-3 text-base font-semibold text-slate-950">
                 Photo Upload
               </h2>
               <PhotoUploader onUpload={handlePhotoUpload} />
             </div>
 
             {data.photoEntries.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm p-4">
-                <div className="flex items-center justify-between border-b pb-2 mb-4">
+              <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-semibold text-gray-900">
+                    <h2 className="text-base font-semibold text-slate-950">
                       Photos ({data.photoEntries.length})
                     </h2>
-                    <span className="text-xs text-gray-400">
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
                       {pageCount} page{pageCount !== 1 ? 's' : ''}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {selectedIds.size > 0 && (
                       <button
                         onClick={() => setShowBulkEdit(true)}
-                        className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                        className="rounded-md bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
                       >
                         Edit {selectedIds.size} selected
                       </button>
                     )}
                     <button
                       onClick={selectedIds.size === data.photoEntries.length ? handleDeselectAll : handleSelectAll}
-                      className="flex items-center gap-1 px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
+                      className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
                     >
                       {selectedIds.size === data.photoEntries.length ? (
                         <>
@@ -401,7 +492,7 @@ function App() {
                     </button>
                     <button
                       onClick={handleRenumber}
-                      className="flex items-center gap-1 px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
+                      className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
                     >
                       <RotateCcw size={14} />
                       Renumber
@@ -437,32 +528,51 @@ function App() {
 
           {/* Right: Report Preview Panel */}
           <div className="flex-1 no-print">
-            <div className="bg-gray-700 rounded-lg shadow-lg p-4 sticky top-16">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-white font-medium text-sm">Report Preview</h3>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <label className="text-xs text-gray-300">Zoom:</label>
+            <div className="sticky top-20 rounded-lg border border-slate-700 bg-slate-800 p-4 shadow-xl">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Report Preview</h3>
+                  <p className="text-xs text-slate-300">Print ignores preview zoom and renders at true size.</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="text-xs text-slate-300">Zoom</label>
                     <input
                       type="range"
                       min="25"
-                      max="60"
+                      max="120"
                       value={previewScale}
                       onChange={(e) => setPreviewScale(parseInt(e.target.value))}
-                      className="w-16"
+                      className="w-28 accent-blue-500"
                     />
-                    <span className="text-xs text-gray-300">{previewScale}%</span>
+                    <span className="w-10 text-right text-xs text-slate-300">{previewScale}%</span>
+                    <div className="flex items-center gap-1">
+                      {[
+                        ['Fit', 40],
+                        ['75%', 75],
+                        ['100%', 100],
+                        ['120%', 120],
+                      ].map(([label, value]) => (
+                        <button
+                          key={label}
+                          onClick={() => setPreviewScale(value as number)}
+                          className="rounded border border-slate-600 px-2 py-1 text-xs font-medium text-slate-100 hover:bg-slate-700"
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <button
                     onClick={handlePrint}
-                    className="text-xs text-white bg-gray-600 px-2 py-1 rounded hover:bg-gray-500 flex items-center gap-1"
+                    className="inline-flex items-center gap-1 rounded-md bg-white px-2.5 py-1.5 text-xs font-medium text-slate-900 hover:bg-slate-100"
                   >
                     <Printer size={14} />
                     Print
                   </button>
                 </div>
               </div>
-              <div className="overflow-auto max-h-[calc(100vh-160px)] rounded bg-gray-600 no-print">
+              <div className="max-h-[calc(100vh-190px)] overflow-auto rounded-md bg-slate-700 p-4 no-print">
                 <div
                   className="preview-zoom-container no-print"
                   style={{

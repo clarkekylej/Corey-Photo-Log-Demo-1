@@ -35,19 +35,24 @@ export function getDefaultProjectData(): ProjectData {
   return {
     projectInfo: getDefaultProjectInfo(),
     photoEntries: [],
+    selectedPhotoIds: [],
   };
 }
 
 export function createPhotoEntry(image: string, index: number): PhotoEntry {
   const today = new Date().toISOString().split('T')[0];
+  const id = generateId();
+  const imageId = `photo-${id}`;
   return {
-    id: generateId(),
+    id,
     photographNo: index,
     date: today,
     directionTaken: '',
     description: '',
     image,
+    imageId,
     originalImage: image,
+    originalImageId: imageId,
     imageSettings: getDefaultImageSettings(),
   };
 }

@@ -7,6 +7,7 @@ export interface ProjectInfo {
   preparedBy: string;
   reportDate: string;
   companyLogo: string | null;
+  companyLogoId?: string | null;
 }
 
 export interface ImageSettings {
@@ -27,11 +28,14 @@ export interface PhotoEntry {
   directionTaken: string;
   description: string;
   image: string;
+  imageId?: string;
   originalImage?: string;
+  originalImageId?: string;
   imageSettings: ImageSettings;
 }
 
 export interface ProjectData {
   projectInfo: ProjectInfo;
   photoEntries: PhotoEntry[];
+  selectedPhotoIds: string[];
 }

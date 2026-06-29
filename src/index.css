@@ -68,9 +68,7 @@
   }
 
   /* Reset all transforms used for screen preview zoom */
-  .preview-zoom-container,
-  .report-page,
-  .report-page * {
+  .preview-zoom-container {
     transform: none !important;
     transform-origin: initial !important;
   }

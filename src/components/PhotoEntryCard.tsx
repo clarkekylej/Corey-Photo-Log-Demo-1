@@ -66,10 +66,13 @@ export function PhotoEntryCard({
   };
 
   const handleReplaceImage = (image: string) => {
+    const imageId = `photo-${entry.id}-${Date.now().toString(36)}`;
     onChange({
       ...entry,
       image,
+      imageId,
       originalImage: image,
+      originalImageId: imageId,
       imageSettings: {
         zoom: 100,
         posX: 50,
@@ -110,26 +113,26 @@ export function PhotoEntryCard({
 
   return (
     <>
-      <div className={`border rounded-lg overflow-hidden bg-white transition-shadow ${isSelected ? 'border-blue-500 shadow-md ring-2 ring-blue-200' : 'border-gray-200'}`}>
+      <div className={`overflow-hidden rounded-lg border bg-white transition-shadow ${isSelected ? 'border-blue-500 shadow-md ring-2 ring-blue-100' : 'border-slate-200 shadow-sm'}`}>
         {/* Header */}
-        <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border-b">
+        <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2">
           <button
             onClick={onToggleSelect}
-            className={`p-1 rounded ${isSelected ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+            className={`rounded p-1 ${isSelected ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
             title={isSelected ? 'Deselect' : 'Select for bulk edit'}
           >
             {isSelected ? <CheckSquare size={18} /> : <Square size={18} />}
           </button>
-          <span className="font-semibold text-gray-700">
+          <span className="font-semibold text-slate-800">
             Photo #{entry.photographNo}
           </span>
-          <span className="text-xs text-gray-400 ml-1">({index + 1} of total)</span>
+          <span className="ml-1 text-xs text-slate-400">({index + 1} of total)</span>
           <div className="flex-1" />
           <div className="flex items-center gap-0.5">
             <button
               onClick={onMoveUp}
               disabled={!canMoveUp}
-              className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="rounded p-1.5 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-30"
               title="Move up"
             >
               <ArrowUp size={16} />
@@ -137,7 +140,7 @@ export function PhotoEntryCard({
             <button
               onClick={onMoveDown}
               disabled={!canMoveDown}
-              className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="rounded p-1.5 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-30"
               title="Move down"
             >
               <ArrowDown size={16} />
@@ -145,7 +148,7 @@ export function PhotoEntryCard({
             {hasPrevious && (
               <button
                 onClick={onDuplicatePrevious}
-                className="p-1.5 rounded hover:bg-gray-200 text-gray-600"
+                className="rounded p-1.5 text-slate-600 hover:bg-slate-200"
                 title="Copy metadata from previous"
               >
                 <CopyPlus size={16} />
@@ -153,14 +156,14 @@ export function PhotoEntryCard({
             )}
             <button
               onClick={onDuplicate}
-              className="p-1.5 rounded hover:bg-gray-200"
+              className="rounded p-1.5 hover:bg-slate-200"
               title="Duplicate entry"
             >
               <Copy size={16} />
             </button>
             <button
               onClick={onDelete}
-              className="p-1.5 rounded hover:bg-red-100 text-red-600"
+              className="rounded p-1.5 text-red-600 hover:bg-red-50"
               title="Delete"
             >
               <Trash2 size={16} />
@@ -169,13 +172,13 @@ export function PhotoEntryCard({
         </div>
 
         {/* Content */}
-        <div className="p-3 space-y-3">
+        <div className="space-y-3 p-3">
           {/* Image + Metadata Row */}
           <div className="flex gap-3">
             {/* Image Preview */}
             <div className="w-36 flex-shrink-0">
               <div
-                className="relative aspect-[7/4.25] bg-gray-100 rounded overflow-hidden border border-gray-200 cursor-pointer group"
+                className="group relative aspect-[7/4.25] cursor-pointer overflow-hidden rounded-md border border-slate-200 bg-slate-100"
                 onClick={() => setShowEditor(true)}
               >
                 <img
@@ -183,7 +186,7 @@ export function PhotoEntryCard({
                   alt={`Photo ${entry.photographNo}`}
                   style={imageStyle}
                 />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/30">
                   <Edit3
                     size={24}
                     className="text-white opacity-0 group-hover:opacity-100 transition-opacity"
@@ -196,7 +199,7 @@ export function PhotoEntryCard({
             <div className="flex-1 space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-0.5">
+                  <label className="mb-0.5 block text-xs font-medium text-slate-600">
                     Photo No.
                   </label>
                   <input
@@ -205,11 +208,11 @@ export function PhotoEntryCard({
                     onChange={(e) =>
                       onChange({ ...entry, photographNo: parseInt(e.target.value) || 1 })
                     }
-                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-0.5">
+                  <label className="mb-0.5 block text-xs font-medium text-slate-600">
                     Date
                   </label>
                   <input
@@ -218,12 +221,12 @@ export function PhotoEntryCard({
                     value={entry.date}
                     onChange={handleChange('date')}
                     onKeyDown={(e) => handleKeyDown(e, 'date')}
-                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-0.5">
+                <label className="mb-0.5 block text-xs font-medium text-slate-600">
                   Direction
                 </label>
                 <input
@@ -233,7 +236,7 @@ export function PhotoEntryCard({
                   onChange={handleChange('directionTaken')}
                   onKeyDown={(e) => handleKeyDown(e, 'direction')}
                   placeholder="e.g., North, East facing southwest"
-                  className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -242,12 +245,12 @@ export function PhotoEntryCard({
           {/* Description */}
           <div>
             <div className="flex items-center justify-between mb-0.5">
-              <label className="block text-xs font-medium text-gray-600">
+              <label className="block text-xs font-medium text-slate-600">
                 Description
               </label>
               <button
                 onClick={onCopyToAll}
-                className="text-xs text-blue-600 hover:text-blue-800"
+                className="text-xs font-medium text-blue-600 hover:text-blue-800"
                 title="Apply to all entries"
               >
                 Copy to All
@@ -260,15 +263,15 @@ export function PhotoEntryCard({
               onKeyDown={(e) => handleKeyDown(e, 'description')}
               placeholder="Describe what this photo shows..."
               rows={2}
-              className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full resize-none rounded border border-slate-300 px-2 py-1.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Quick Actions */}
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex items-center gap-2 text-xs text-slate-500">
             <button
               onClick={() => setShowEditor(true)}
-              className="flex items-center gap-1 px-2 py-1 border border-gray-200 rounded hover:bg-gray-50"
+              className="flex items-center gap-1 rounded border border-slate-200 px-2 py-1 hover:bg-slate-50"
             >
               <Settings size={12} />
               Edit Crop
@@ -276,7 +279,7 @@ export function PhotoEntryCard({
             {previousEntry?.description && (
               <button
                 onClick={() => onChange({ ...entry, description: previousEntry.description })}
-                className="flex items-center gap-1 px-2 py-1 border border-gray-200 rounded hover:bg-gray-50"
+                className="flex items-center gap-1 rounded border border-slate-200 px-2 py-1 hover:bg-slate-50"
               >
                 Paste Prev. Desc
               </button>

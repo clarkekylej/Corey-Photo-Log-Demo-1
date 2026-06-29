@@ -9,13 +9,20 @@ interface Props {
 
 export function ProjectSetupForm({ projectInfo, onChange }: Props) {
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const inputClass =
+    'w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20';
+  const labelClass = 'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
-        onChange({ ...projectInfo, companyLogo: event.target?.result as string });
+        onChange({
+          ...projectInfo,
+          companyLogo: event.target?.result as string,
+          companyLogoId: `logo-${Date.now().toString(36)}`,
+        });
       };
       reader.readAsDataURL(file);
     }
@@ -28,28 +35,31 @@ export function ProjectSetupForm({ projectInfo, onChange }: Props) {
   };
 
   const removeLogo = () => {
-    onChange({ ...projectInfo, companyLogo: null });
+    onChange({ ...projectInfo, companyLogo: null, companyLogoId: null });
   };
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">Project Setup</h2>
+      <div className="border-b border-slate-200 pb-3">
+        <h2 className="text-base font-semibold text-slate-950">Project Setup</h2>
+        <p className="mt-1 text-xs text-slate-500">These fields appear in the report header.</p>
+      </div>
 
       <div className="space-y-3">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className={labelClass}>
             Report Title
           </label>
           <input
             type="text"
             value={projectInfo.reportTitle}
             onChange={handleChange('reportTitle')}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={inputClass}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className={labelClass}>
             Project Name <span className="text-red-500">*</span>
           </label>
           <input
@@ -57,12 +67,12 @@ export function ProjectSetupForm({ projectInfo, onChange }: Props) {
             value={projectInfo.projectName}
             onChange={handleChange('projectName')}
             placeholder="Enter project name"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={inputClass}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className={labelClass}>
             Client Name <span className="text-red-500">*</span>
           </label>
           <input
@@ -70,12 +80,12 @@ export function ProjectSetupForm({ projectInfo, onChange }: Props) {
             value={projectInfo.clientName}
             onChange={handleChange('clientName')}
             placeholder="Enter client name"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={inputClass}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className={labelClass}>
             Job Number <span className="text-red-500">*</span>
           </label>
           <input
@@ -83,12 +93,12 @@ export function ProjectSetupForm({ projectInfo, onChange }: Props) {
             value={projectInfo.jobNumber}
             onChange={handleChange('jobNumber')}
             placeholder="Enter job number"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={inputClass}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className={labelClass}>
             Location <span className="text-red-500">*</span>
           </label>
           <input
@@ -96,12 +106,12 @@ export function ProjectSetupForm({ projectInfo, onChange }: Props) {
             value={projectInfo.location}
             onChange={handleChange('location')}
             placeholder="Enter location"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={inputClass}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className={labelClass}>
             Prepared By
           </label>
           <input
@@ -109,36 +119,36 @@ export function ProjectSetupForm({ projectInfo, onChange }: Props) {
             value={projectInfo.preparedBy}
             onChange={handleChange('preparedBy')}
             placeholder="Optional"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={inputClass}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className={labelClass}>
             Report Date
           </label>
           <input
             type="date"
             value={projectInfo.reportDate}
             onChange={handleChange('reportDate')}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={inputClass}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className={labelClass}>
             Company Logo
           </label>
           {projectInfo.companyLogo ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 rounded-md border border-slate-200 bg-slate-50 p-2">
               <img
                 src={projectInfo.companyLogo}
                 alt="Company Logo"
-                className="h-16 w-auto border border-gray-200 rounded"
+                className="h-16 w-auto rounded border border-slate-200 bg-white"
               />
               <button
                 onClick={removeLogo}
-                className="p-1 text-red-500 hover:bg-red-50 rounded"
+                className="rounded-md p-1.5 text-red-600 hover:bg-red-50"
                 title="Remove logo"
               >
                 <X size={18} />
@@ -147,10 +157,10 @@ export function ProjectSetupForm({ projectInfo, onChange }: Props) {
           ) : (
             <button
               onClick={() => logoInputRef.current?.click()}
-              className="flex items-center gap-2 px-3 py-2 border border-gray-300 border-dashed rounded-md hover:bg-gray-50 w-full"
+              className="flex w-full items-center gap-2 rounded-md border border-dashed border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
             >
-              <Upload size={18} className="text-gray-400" />
-              <span className="text-sm text-gray-500">Upload logo</span>
+              <Upload size={18} className="text-slate-400" />
+              <span>Upload logo</span>
             </button>
           )}
           <input

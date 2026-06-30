@@ -10,6 +10,7 @@ export function getDefaultImageSettings(): ImageSettings {
     posX: 50,
     posY: 50,
     rotation: 0,
+    fit: 'cover',
     cropX: 0,
     cropY: 0,
     cropWidth: 100,

@@ -9,7 +9,12 @@ import {
   RotateCcw,
   RefreshCw,
   Image as ImageIcon,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
+import { PhotoFrame } from './PhotoFrame';
 
 interface Props {
   entry: PhotoEntry;
@@ -19,13 +24,14 @@ interface Props {
 }
 
 export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
-  const imageRef = useRef<HTMLImageElement>(null);
   const [settings, setSettings] = useState<ImageSettings>(entry.imageSettings);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const replaceInputRef = useRef<HTMLInputElement>(null);
 
   const aspectRatio = 7 / 4.25;
+  const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
+  const clampZoom = (value: number) => Math.max(100, Math.min(300, value));
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -40,7 +46,7 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
   const handleZoom = (delta: number) => {
     setSettings((prev) => ({
       ...prev,
-      zoom: Math.max(50, Math.min(300, prev.zoom + delta)),
+      zoom: clampZoom(prev.zoom + delta),
     }));
   };
 
@@ -66,8 +72,8 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
 
       setSettings((prev) => ({
         ...prev,
-        posX: Math.max(0, Math.min(100, prev.posX - dx * sensitivity)),
-        posY: Math.max(0, Math.min(100, prev.posY - dy * sensitivity)),
+        posX: clampPercent(prev.posX - dx * sensitivity),
+        posY: clampPercent(prev.posY - dy * sensitivity),
       }));
 
       setDragStart({ x: e.clientX, y: e.clientY });
@@ -96,6 +102,7 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
       posX: 50,
       posY: 50,
       rotation: 0,
+      fit: 'cover',
       cropX: 0,
       cropY: 0,
       cropWidth: 100,
@@ -119,16 +126,22 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
     }
   };
 
-  const getTransformedImageStyle = (): React.CSSProperties => {
-    return {
-      transform: `scale(${settings.zoom / 100}) rotate(${settings.rotation}deg)`,
-      transformOrigin: `${settings.posX}% ${settings.posY}%`,
-      objectFit: 'cover',
-      objectPosition: `${settings.posX}% ${settings.posY}%`,
-      maxWidth: 'none',
-      cursor: isDragging ? 'grabbing' : 'grab',
-      userSelect: 'none',
-    };
+  const nudge = (axis: 'x' | 'y', amount: number) => {
+    setSettings((prev) => ({
+      ...prev,
+      posX: axis === 'x' ? clampPercent(prev.posX + amount) : prev.posX,
+      posY: axis === 'y' ? clampPercent(prev.posY + amount) : prev.posY,
+    }));
+  };
+
+  const setFitMode = (fit: ImageSettings['fit']) => {
+    setSettings((prev) => ({
+      ...prev,
+      fit,
+      zoom: 100,
+      posX: 50,
+      posY: 50,
+    }));
   };
 
   return (
@@ -171,13 +184,13 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
               }}
               onMouseDown={handleMouseDown}
             >
-              <img
-                ref={imageRef}
+              <PhotoFrame
                 src={entry.image}
+                settings={settings}
                 alt="Edit preview"
-                className="w-full h-full"
-                style={getTransformedImageStyle()}
-                draggable={false}
+                mode="editor"
+                className={isDragging ? 'cursor-grabbing' : 'cursor-grab'}
+                imageClassName="pointer-events-none"
               />
               {/* Aspect ratio overlay guide */}
               <div className="absolute inset-0 pointer-events-none border-2 border-white/30 rounded" />
@@ -200,10 +213,11 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
                 </button>
                 <input
                   type="range"
-                  min="50"
+                  min="100"
                   max="300"
+                  step="1"
                   value={settings.zoom}
-                  onChange={(e) => setSettings((s) => ({ ...s, zoom: parseInt(e.target.value) }))}
+                  onChange={(e) => setSettings((s) => ({ ...s, zoom: clampZoom(parseInt(e.target.value)) }))}
                   className="flex-1"
                 />
                 <button
@@ -213,7 +227,26 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
                   <ZoomIn size={16} />
                 </button>
               </div>
-              <div className="text-xs text-gray-500 text-center">{settings.zoom}%</div>
+              <div className="text-xs text-gray-500 text-center">{(settings.zoom / 100).toFixed(2)}x</div>
+            </div>
+
+            {/* Fit Controls */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Frame Fit</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setFitMode('contain')}
+                  className={`p-2 border rounded hover:bg-gray-50 ${settings.fit === 'contain' ? 'border-blue-500 bg-blue-50 text-blue-700' : ''}`}
+                >
+                  Fit Image
+                </button>
+                <button
+                  onClick={() => setFitMode('cover')}
+                  className={`p-2 border rounded hover:bg-gray-50 ${settings.fit !== 'contain' ? 'border-blue-500 bg-blue-50 text-blue-700' : ''}`}
+                >
+                  Fill Frame
+                </button>
+              </div>
             </div>
 
             {/* Rotation Controls */}
@@ -250,8 +283,9 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
                     type="range"
                     min="0"
                     max="100"
+                    step="1"
                     value={settings.posX}
-                    onChange={(e) => setSettings((s) => ({ ...s, posX: parseInt(e.target.value) }))}
+                    onChange={(e) => setSettings((s) => ({ ...s, posX: clampPercent(parseInt(e.target.value)) }))}
                     className="flex-1"
                   />
                   <span className="text-xs text-gray-500 w-8 text-right">{settings.posX}%</span>
@@ -262,14 +296,36 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
                     type="range"
                     min="0"
                     max="100"
+                    step="1"
                     value={settings.posY}
-                    onChange={(e) => setSettings((s) => ({ ...s, posY: parseInt(e.target.value) }))}
+                    onChange={(e) => setSettings((s) => ({ ...s, posY: clampPercent(parseInt(e.target.value)) }))}
                     className="flex-1"
                   />
                   <span className="text-xs text-gray-500 w-8 text-right">{settings.posY}%</span>
                 </div>
               </div>
-              <p className="text-xs text-gray-400">Drag image to pan</p>
+              <div className="grid grid-cols-3 gap-1 pt-1">
+                <span />
+                <button onClick={() => nudge('y', -1)} className="p-1.5 border rounded hover:bg-gray-50" title="Nudge up">
+                  <ArrowUp size={14} className="mx-auto" />
+                </button>
+                <span />
+                <button onClick={() => nudge('x', -1)} className="p-1.5 border rounded hover:bg-gray-50" title="Nudge left">
+                  <ArrowLeft size={14} className="mx-auto" />
+                </button>
+                <button onClick={() => setSettings((s) => ({ ...s, posX: 50, posY: 50 }))} className="p-1.5 border rounded text-xs hover:bg-gray-50">
+                  Center
+                </button>
+                <button onClick={() => nudge('x', 1)} className="p-1.5 border rounded hover:bg-gray-50" title="Nudge right">
+                  <ArrowRight size={14} className="mx-auto" />
+                </button>
+                <span />
+                <button onClick={() => nudge('y', 1)} className="p-1.5 border rounded hover:bg-gray-50" title="Nudge down">
+                  <ArrowDown size={14} className="mx-auto" />
+                </button>
+                <span />
+              </div>
+              <p className="text-xs text-gray-400">Drag image to pan, or use sliders and nudge buttons for fine placement.</p>
             </div>
 
             {/* Preview Info */}

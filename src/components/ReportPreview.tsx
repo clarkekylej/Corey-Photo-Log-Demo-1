@@ -1,5 +1,6 @@
 import { forwardRef, memo, useMemo, Fragment } from 'react';
 import { ProjectData } from '../types';
+import { PhotoFrame } from './PhotoFrame';
 
 interface Props {
   data: ProjectData;
@@ -214,18 +215,12 @@ export const ReportPreview = memo(forwardRef<HTMLDivElement, Props>(({ data }, r
                       boxSizing: 'border-box',
                     }}
                   >
-                    <div className="report-photo-box">
-                      <img
-                        className="report-photo-image"
-                        src={entry.image}
-                        alt={`Photograph ${entry.photographNo}`}
-                        style={{
-                          objectPosition: `${entry.imageSettings.posX}% ${entry.imageSettings.posY}%`,
-                          transform: `scale(${entry.imageSettings.zoom / 100}) rotate(${entry.imageSettings.rotation}deg)`,
-                          transformOrigin: `${entry.imageSettings.posX}% ${entry.imageSettings.posY}%`,
-                        }}
-                      />
-                    </div>
+                    <PhotoFrame
+                      mode="report"
+                      src={entry.image}
+                      settings={entry.imageSettings}
+                      alt={`Photograph ${entry.photographNo}`}
+                    />
                   </div>
                 </div>
 

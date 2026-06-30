@@ -12,6 +12,7 @@ import {
   Square,
 } from 'lucide-react';
 import { PhotoEditor } from './PhotoEditor';
+import { PhotoFrame } from './PhotoFrame';
 
 interface Props {
   entry: PhotoEntry;
@@ -78,22 +79,13 @@ export function PhotoEntryCard({
         posX: 50,
         posY: 50,
         rotation: 0,
+        fit: 'cover',
         cropX: 0,
         cropY: 0,
         cropWidth: 100,
         cropHeight: 100,
       },
     });
-  };
-
-  const imageStyle: React.CSSProperties = {
-    objectFit: 'cover',
-    objectPosition: `${entry.imageSettings.posX}% ${entry.imageSettings.posY}%`,
-    transform: `scale(${entry.imageSettings.zoom / 100}) rotate(${entry.imageSettings.rotation}deg)`,
-    transformOrigin: `${entry.imageSettings.posX}% ${entry.imageSettings.posY}%`,
-    maxWidth: 'none',
-    width: '100%',
-    height: '100%',
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, currentField: 'date' | 'direction' | 'description') => {
@@ -178,13 +170,14 @@ export function PhotoEntryCard({
             {/* Image Preview */}
             <div className="w-36 flex-shrink-0">
               <div
-                className="group relative aspect-[7/4.25] cursor-pointer overflow-hidden rounded-md border border-slate-200 bg-slate-100"
+                className="group relative cursor-pointer"
                 onClick={() => setShowEditor(true)}
               >
-                <img
+                <PhotoFrame
                   src={entry.image}
+                  settings={entry.imageSettings}
                   alt={`Photo ${entry.photographNo}`}
-                  style={imageStyle}
+                  mode="thumbnail"
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/30">
                   <Edit3

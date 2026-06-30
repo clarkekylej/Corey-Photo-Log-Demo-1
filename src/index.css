@@ -23,12 +23,11 @@
   box-sizing: border-box;
 }
 
-.report-photo-image {
+.photo-frame-image {
   display: block;
   width: 100%;
   height: 100%;
   max-width: none;
-  object-fit: cover;
 }
 
 @page {
@@ -96,11 +95,10 @@
     overflow: hidden !important;
   }
 
-  .report-photo-image {
+  .photo-frame-image {
     width: 100% !important;
     height: 100% !important;
     max-width: none !important;
-    object-fit: cover !important;
     display: block !important;
   }
 

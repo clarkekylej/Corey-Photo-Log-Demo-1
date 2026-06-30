@@ -15,6 +15,7 @@ export interface ImageSettings {
   posX: number;
   posY: number;
   rotation: number;
+  fit: 'cover' | 'contain';
   cropX: number;
   cropY: number;
   cropWidth: number;

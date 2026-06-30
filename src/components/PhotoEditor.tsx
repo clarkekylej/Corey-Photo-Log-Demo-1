@@ -33,6 +33,10 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
   const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
   const clampZoom = (value: number) => Math.max(100, Math.min(300, value));
   const isFitEntirePhoto = settings.fit === 'contain';
+  const displayedZoom = isFitEntirePhoto ? 100 : settings.zoom;
+  const displayedPosX = isFitEntirePhoto ? 50 : settings.posX;
+  const displayedPosY = isFitEntirePhoto ? 50 : settings.posY;
+  const displayedRotation = isFitEntirePhoto ? 0 : settings.rotation;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -45,6 +49,7 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
   }, [onClose]);
 
   const handleZoom = (delta: number) => {
+    if (isFitEntirePhoto) return;
     setSettings((prev) => ({
       ...prev,
       zoom: clampZoom(prev.zoom + delta),
@@ -52,6 +57,7 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
   };
 
   const handleRotate = (direction: 'cw' | 'ccw') => {
+    if (isFitEntirePhoto) return;
     setSettings((prev) => ({
       ...prev,
       rotation: direction === 'cw' ? (prev.rotation + 90) % 360 : (prev.rotation - 90 + 360) % 360,
@@ -129,6 +135,7 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
   };
 
   const nudge = (axis: 'x' | 'y', amount: number) => {
+    if (isFitEntirePhoto) return;
     setSettings((prev) => ({
       ...prev,
       posX: axis === 'x' ? clampPercent(prev.posX + amount) : prev.posX,
@@ -144,6 +151,7 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
       zoom: 100,
       posX: 50,
       posY: 50,
+      rotation: fit === 'contain' ? 0 : prev.rotation,
     }));
   };
 
@@ -220,7 +228,7 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
                   min="100"
                   max="300"
                   step="1"
-                  value={settings.zoom}
+                  value={displayedZoom}
                   onChange={(e) => setSettings((s) => ({ ...s, zoom: clampZoom(parseInt(e.target.value)) }))}
                   disabled={isFitEntirePhoto}
                   className="flex-1"
@@ -233,7 +241,7 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
                   <ZoomIn size={16} />
                 </button>
               </div>
-              <div className="text-xs text-gray-500 text-center">{(settings.zoom / 100).toFixed(2)}x</div>
+              <div className="text-xs text-gray-500 text-center">{(displayedZoom / 100).toFixed(2)}x</div>
             </div>
 
             {/* Fit Controls */}
@@ -266,18 +274,20 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
               <div className="flex gap-2">
                 <button
                   onClick={() => handleRotate('ccw')}
-                  className="flex-1 p-2 border rounded hover:bg-gray-50 flex items-center justify-center gap-1"
+                  disabled={isFitEntirePhoto}
+                  className="flex-1 p-2 border rounded hover:bg-gray-50 flex items-center justify-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <RotateCcw size={16} /> Left
                 </button>
                 <button
                   onClick={() => handleRotate('cw')}
-                  className="flex-1 p-2 border rounded hover:bg-gray-50 flex items-center justify-center gap-1"
+                  disabled={isFitEntirePhoto}
+                  className="flex-1 p-2 border rounded hover:bg-gray-50 flex items-center justify-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <RotateCw size={16} /> Right
                 </button>
               </div>
-              <div className="text-xs text-gray-500 text-center">{settings.rotation}°</div>
+              <div className="text-xs text-gray-500 text-center">{displayedRotation}°</div>
             </div>
 
             {/* Pan Controls */}
@@ -293,12 +303,12 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
                     min="0"
                     max="100"
                     step="1"
-                    value={settings.posX}
+                    value={displayedPosX}
                     onChange={(e) => setSettings((s) => ({ ...s, posX: clampPercent(parseInt(e.target.value)) }))}
                     disabled={isFitEntirePhoto}
                     className="flex-1"
                   />
-                  <span className="text-xs text-gray-500 w-8 text-right">{settings.posX}%</span>
+                  <span className="text-xs text-gray-500 w-8 text-right">{displayedPosX}%</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-500 w-6">Y:</span>
@@ -307,12 +317,12 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
                     min="0"
                     max="100"
                     step="1"
-                    value={settings.posY}
+                    value={displayedPosY}
                     onChange={(e) => setSettings((s) => ({ ...s, posY: clampPercent(parseInt(e.target.value)) }))}
                     disabled={isFitEntirePhoto}
                     className="flex-1"
                   />
-                  <span className="text-xs text-gray-500 w-8 text-right">{settings.posY}%</span>
+                  <span className="text-xs text-gray-500 w-8 text-right">{displayedPosY}%</span>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-1 pt-1">

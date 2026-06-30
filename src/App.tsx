@@ -9,7 +9,7 @@ import {
   importProjectJSON,
   hasMeaningfulProjectData,
 } from './utils/storage';
-import { getDefaultProjectData, createPhotoEntry } from './utils/defaults';
+import { getDefaultProjectData, createPhotoEntry, getDefaultImageSettings } from './utils/defaults';
 import { ProjectSetupForm } from './components/ProjectSetupForm';
 import { PhotoUploader } from './components/PhotoUploader';
 import { PhotoEntryCard } from './components/PhotoEntryCard';
@@ -274,6 +274,16 @@ function App() {
     }));
   };
 
+  const handleResetAllPhotosToFit = () => {
+    setData((prev) => ({
+      ...prev,
+      photoEntries: prev.photoEntries.map((entry) => ({
+        ...entry,
+        imageSettings: getDefaultImageSettings(),
+      })),
+    }));
+  };
+
   const handleSaveDraft = async () => {
     setSaveStatus('saving');
     const result = await saveDraft(data);
@@ -496,6 +506,13 @@ function App() {
                     >
                       <RotateCcw size={14} />
                       Renumber
+                    </button>
+                    <button
+                      onClick={handleResetAllPhotosToFit}
+                      className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                    >
+                      <RotateCcw size={14} />
+                      Reset All Photos to Fit Entire Photo
                     </button>
                   </div>
                 </div>

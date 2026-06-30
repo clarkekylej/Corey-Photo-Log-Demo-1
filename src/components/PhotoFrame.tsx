@@ -35,7 +35,26 @@ export function PhotoFrame({
   const zoom = isFitEntirePhoto ? 100 : Math.max(100, Math.min(300, settings.zoom || 100));
   const posX = isFitEntirePhoto ? 50 : Math.max(0, Math.min(100, settings.posX));
   const posY = isFitEntirePhoto ? 50 : Math.max(0, Math.min(100, settings.posY));
-  const rotation = settings.rotation || 0;
+  const rotation = isFitEntirePhoto ? 0 : settings.rotation || 0;
+  // Contain mode is the default report behavior: no transform math, so the full uploaded photo stays visible.
+  const imageStyle: CSSProperties = isFitEntirePhoto
+    ? {
+        display: 'block',
+        objectFit: 'contain',
+        objectPosition: 'center center',
+        transform: 'none',
+        transformOrigin: 'center center',
+        maxWidth: 'none',
+      }
+    : {
+        display: 'block',
+        objectFit: 'cover',
+        objectPosition: `${posX}% ${posY}%`,
+        transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
+        transformOrigin: `${posX}% ${posY}%`,
+        maxWidth: 'none',
+      };
+  const showDebugLabel = mode === 'report' && import.meta.env.DEV;
 
   return (
     <div
@@ -48,15 +67,13 @@ export function PhotoFrame({
         alt={alt}
         draggable={false}
         className={`photo-frame-image h-full w-full select-none ${imageClassName}`}
-        style={{
-          display: 'block',
-          objectFit: fit,
-          objectPosition: `${posX}% ${posY}%`,
-          transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
-          transformOrigin: `${posX}% ${posY}%`,
-          maxWidth: 'none',
-        }}
+        style={imageStyle}
       />
+      {showDebugLabel && (
+        <div className="no-print absolute bottom-1 right-1 rounded bg-black/70 px-1.5 py-0.5 text-[9px] leading-none text-white">
+          fit:{fit} zoom:{zoom}% x:{posX} y:{posY}
+        </div>
+      )}
     </div>
   );
 }

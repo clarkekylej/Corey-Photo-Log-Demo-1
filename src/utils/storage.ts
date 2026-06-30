@@ -98,13 +98,15 @@ async function clearImageDb(): Promise<void> {
 function normalizeImageSettings(value: unknown): ImageSettings {
   const defaults = getDefaultImageSettings();
   if (!isRecord(value)) return defaults;
+  const fitModeExplicit = value.fitModeExplicit === true;
 
   return {
     zoom: numberOr(value.zoom, defaults.zoom),
     posX: numberOr(value.posX, defaults.posX),
     posY: numberOr(value.posY, defaults.posY),
     rotation: numberOr(value.rotation, defaults.rotation),
-    fit: value.fit === 'cover' ? 'cover' : defaults.fit,
+    fit: fitModeExplicit && value.fit === 'cover' ? 'cover' : defaults.fit,
+    fitModeExplicit,
     cropX: numberOr(value.cropX, defaults.cropX),
     cropY: numberOr(value.cropY, defaults.cropY),
     cropWidth: numberOr(value.cropWidth, defaults.cropWidth),

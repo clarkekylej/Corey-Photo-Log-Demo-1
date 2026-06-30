@@ -32,6 +32,7 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
   const aspectRatio = 7 / 4.25;
   const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
   const clampZoom = (value: number) => Math.max(100, Math.min(300, value));
+  const isFitEntirePhoto = settings.fit === 'contain';
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -103,6 +104,7 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
       posY: 50,
       rotation: 0,
       fit: settings.fit === 'cover' ? 'cover' : 'contain',
+      fitModeExplicit: settings.fitModeExplicit === true,
       cropX: 0,
       cropY: 0,
       cropWidth: 100,
@@ -138,6 +140,7 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
     setSettings((prev) => ({
       ...prev,
       fit,
+      fitModeExplicit: true,
       zoom: 100,
       posX: 50,
       posY: 50,
@@ -182,14 +185,14 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
                 height: `${500 / aspectRatio}px`,
                 maxWidth: '100%',
               }}
-              onMouseDown={handleMouseDown}
+              onMouseDown={isFitEntirePhoto ? undefined : handleMouseDown}
             >
               <PhotoFrame
                 src={entry.image}
                 settings={settings}
                 alt="Edit preview"
                 mode="editor"
-                className={isDragging ? 'cursor-grabbing' : 'cursor-grab'}
+                className={isFitEntirePhoto ? 'cursor-default' : isDragging ? 'cursor-grabbing' : 'cursor-grab'}
                 imageClassName="pointer-events-none"
               />
               {/* Aspect ratio overlay guide */}
@@ -207,7 +210,8 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleZoom(-10)}
-                  className="p-1.5 border rounded hover:bg-gray-50"
+                  disabled={isFitEntirePhoto}
+                  className="p-1.5 border rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ZoomOut size={16} />
                 </button>
@@ -218,11 +222,13 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
                   step="1"
                   value={settings.zoom}
                   onChange={(e) => setSettings((s) => ({ ...s, zoom: clampZoom(parseInt(e.target.value)) }))}
+                  disabled={isFitEntirePhoto}
                   className="flex-1"
                 />
                 <button
                   onClick={() => handleZoom(10)}
-                  className="p-1.5 border rounded hover:bg-gray-50"
+                  disabled={isFitEntirePhoto}
+                  className="p-1.5 border rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ZoomIn size={16} />
                 </button>
@@ -248,7 +254,7 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
                 </button>
               </div>
               <p className="text-xs text-gray-400">
-                Fit shows the whole photo. Fill crops to remove empty space.
+                Fit shows the full uploaded photo. Fill crops the image to remove blank space.
               </p>
             </div>
 
@@ -289,6 +295,7 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
                     step="1"
                     value={settings.posX}
                     onChange={(e) => setSettings((s) => ({ ...s, posX: clampPercent(parseInt(e.target.value)) }))}
+                    disabled={isFitEntirePhoto}
                     className="flex-1"
                   />
                   <span className="text-xs text-gray-500 w-8 text-right">{settings.posX}%</span>
@@ -302,6 +309,7 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
                     step="1"
                     value={settings.posY}
                     onChange={(e) => setSettings((s) => ({ ...s, posY: clampPercent(parseInt(e.target.value)) }))}
+                    disabled={isFitEntirePhoto}
                     className="flex-1"
                   />
                   <span className="text-xs text-gray-500 w-8 text-right">{settings.posY}%</span>
@@ -309,26 +317,30 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
               </div>
               <div className="grid grid-cols-3 gap-1 pt-1">
                 <span />
-                <button onClick={() => nudge('y', -1)} className="p-1.5 border rounded hover:bg-gray-50" title="Nudge up">
+                <button onClick={() => nudge('y', -1)} disabled={isFitEntirePhoto} className="p-1.5 border rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed" title="Nudge up">
                   <ArrowUp size={14} className="mx-auto" />
                 </button>
                 <span />
-                <button onClick={() => nudge('x', -1)} className="p-1.5 border rounded hover:bg-gray-50" title="Nudge left">
+                <button onClick={() => nudge('x', -1)} disabled={isFitEntirePhoto} className="p-1.5 border rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed" title="Nudge left">
                   <ArrowLeft size={14} className="mx-auto" />
                 </button>
-                <button onClick={() => setSettings((s) => ({ ...s, posX: 50, posY: 50 }))} className="p-1.5 border rounded text-xs hover:bg-gray-50">
+                <button onClick={() => setSettings((s) => ({ ...s, posX: 50, posY: 50 }))} disabled={isFitEntirePhoto} className="p-1.5 border rounded text-xs hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
                   Center
                 </button>
-                <button onClick={() => nudge('x', 1)} className="p-1.5 border rounded hover:bg-gray-50" title="Nudge right">
+                <button onClick={() => nudge('x', 1)} disabled={isFitEntirePhoto} className="p-1.5 border rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed" title="Nudge right">
                   <ArrowRight size={14} className="mx-auto" />
                 </button>
                 <span />
-                <button onClick={() => nudge('y', 1)} className="p-1.5 border rounded hover:bg-gray-50" title="Nudge down">
+                <button onClick={() => nudge('y', 1)} disabled={isFitEntirePhoto} className="p-1.5 border rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed" title="Nudge down">
                   <ArrowDown size={14} className="mx-auto" />
                 </button>
                 <span />
               </div>
-              <p className="text-xs text-gray-400">Drag image to pan, or use sliders and nudge buttons for fine placement.</p>
+              <p className="text-xs text-gray-400">
+                {isFitEntirePhoto
+                  ? 'Switch to Fill Frame / Crop to zoom or reposition intentionally.'
+                  : 'Drag image to pan, or use sliders and nudge buttons for fine placement.'}
+              </p>
             </div>
 
             {/* Preview Info */}

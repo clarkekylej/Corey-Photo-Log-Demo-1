@@ -30,11 +30,12 @@ export function PhotoFrame({
   style,
   onMouseDown,
 }: PhotoFrameProps) {
-  const zoom = Math.max(100, Math.min(300, settings.zoom || 100));
-  const posX = Math.max(0, Math.min(100, settings.posX));
-  const posY = Math.max(0, Math.min(100, settings.posY));
-  const rotation = settings.rotation || 0;
   const fit = settings.fit ?? 'contain';
+  const isFitEntirePhoto = fit === 'contain';
+  const zoom = isFitEntirePhoto ? 100 : Math.max(100, Math.min(300, settings.zoom || 100));
+  const posX = isFitEntirePhoto ? 50 : Math.max(0, Math.min(100, settings.posX));
+  const posY = isFitEntirePhoto ? 50 : Math.max(0, Math.min(100, settings.posY));
+  const rotation = settings.rotation || 0;
 
   return (
     <div

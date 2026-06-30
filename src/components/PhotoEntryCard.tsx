@@ -79,7 +79,7 @@ export function PhotoEntryCard({
         posX: 50,
         posY: 50,
         rotation: 0,
-        fit: 'cover',
+        fit: 'contain',
         cropX: 0,
         cropY: 0,
         cropWidth: 100,

@@ -102,7 +102,7 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
       posX: 50,
       posY: 50,
       rotation: 0,
-      fit: 'cover',
+      fit: settings.fit === 'cover' ? 'cover' : 'contain',
       cropX: 0,
       cropY: 0,
       cropWidth: 100,
@@ -232,21 +232,24 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
 
             {/* Fit Controls */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Frame Fit</label>
+              <label className="text-sm font-medium text-gray-700">Photo Fit Mode</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => setFitMode('contain')}
                   className={`p-2 border rounded hover:bg-gray-50 ${settings.fit === 'contain' ? 'border-blue-500 bg-blue-50 text-blue-700' : ''}`}
                 >
-                  Fit Image
+                  Fit Entire Photo
                 </button>
                 <button
                   onClick={() => setFitMode('cover')}
                   className={`p-2 border rounded hover:bg-gray-50 ${settings.fit !== 'contain' ? 'border-blue-500 bg-blue-50 text-blue-700' : ''}`}
                 >
-                  Fill Frame
+                  Fill Frame / Crop
                 </button>
               </div>
+              <p className="text-xs text-gray-400">
+                Fit shows the whole photo. Fill crops to remove empty space.
+              </p>
             </div>
 
             {/* Rotation Controls */}
@@ -340,7 +343,7 @@ export function PhotoEditor({ entry, onSave, onReplaceImage, onClose }: Props) {
                 onClick={handleReset}
                 className="w-full px-3 py-2 border rounded hover:bg-gray-50 flex items-center justify-center gap-2"
               >
-                <RefreshCw size={16} /> Reset All
+                <RefreshCw size={16} /> Reset
               </button>
               <button
                 onClick={() => replaceInputRef.current?.click()}

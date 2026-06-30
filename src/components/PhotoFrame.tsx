@@ -15,8 +15,8 @@ interface PhotoFrameProps {
 }
 
 const modeClasses: Record<PhotoFrameMode, string> = {
-  thumbnail: 'aspect-[7/4.25] rounded-md border border-slate-200 bg-slate-100',
-  editor: 'h-full w-full rounded bg-slate-950 shadow-lg',
+  thumbnail: 'aspect-[7/4.25] rounded-md border border-slate-200 bg-white',
+  editor: 'h-full w-full rounded bg-white shadow-lg',
   report: 'report-photo-box',
 };
 
@@ -34,7 +34,7 @@ export function PhotoFrame({
   const posX = Math.max(0, Math.min(100, settings.posX));
   const posY = Math.max(0, Math.min(100, settings.posY));
   const rotation = settings.rotation || 0;
-  const fit = settings.fit ?? 'cover';
+  const fit = settings.fit ?? 'contain';
 
   return (
     <div

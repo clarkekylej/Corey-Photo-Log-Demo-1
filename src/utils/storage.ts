@@ -104,7 +104,7 @@ function normalizeImageSettings(value: unknown): ImageSettings {
     posX: numberOr(value.posX, defaults.posX),
     posY: numberOr(value.posY, defaults.posY),
     rotation: numberOr(value.rotation, defaults.rotation),
-    fit: value.fit === 'contain' ? 'contain' : defaults.fit,
+    fit: value.fit === 'cover' ? 'cover' : defaults.fit,
     cropX: numberOr(value.cropX, defaults.cropX),
     cropY: numberOr(value.cropY, defaults.cropY),
     cropWidth: numberOr(value.cropWidth, defaults.cropWidth),
